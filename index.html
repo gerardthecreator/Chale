@@ -3,106 +3,449 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Laboratorio de Dinámica Virtual</title>
-    <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="responsive.css">
+    <title>Laboratorio de Dinámica Inmersivo (vFinal)</title>
     <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+    <!-- ======================= CSS Styles ======================= -->
+    <style>
+        :root {
+            --bg-color: #0d1117; --panel-bg: rgba(22, 27, 34, 0.6); --border-color: rgba(255, 255, 255, 0.15);
+            --text-color: #c9d1d9; --accent-color: #58a6ff; --highlight-color: #f778ba;
+            --energy-potential-color: #3fb950; --energy-kinetic-color: #f0883e;
+            --force-color: #e34c26; --velocity-color: #3fb950; --tension-color: #ffca3a; --dcl-grid: rgba(88, 166, 255, 0.2);
+            --font-family: 'Share Tech Mono', monospace;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body {
+            background-color: var(--bg-color);
+            background-image: radial-gradient(circle at 1px 1px, rgba(255, 255, 255, 0.03) 1px, transparent 0);
+            background-size: 25px 25px; font-family: var(--font-family); color: var(--text-color);
+        }
+        header { text-align: center; padding: 2.5rem 1rem 1.5rem 1rem; border-bottom: 1px solid var(--border-color); }
+        header h1 { font-size: 2.5rem; color: var(--accent-color); margin-bottom: 1rem; text-shadow: 0 0 10px var(--accent-color); }
+        .module-selector-container { max-width: 600px; margin: auto; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--border-color); }
+        #module-select { width: 100%; padding: 0.8rem; background-color: #161b22; border: 1px solid var(--border-color); color: var(--text-color); font-family: var(--font-family); border-radius: 0.5rem; font-size: 1.2rem; cursor: pointer; }
+        .main-container { padding: 2rem 1rem; }
+        .physics-module { display: none; justify-content: center; align-items: flex-start; flex-wrap: wrap; gap: 2rem; width: 100%; animation: fadeIn 0.6s ease-in-out; }
+        .active-module { display: flex; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: scale(1); } }
+        .glass-panel { background: var(--panel-bg); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); border-radius: 1rem; border: 1px solid var(--border-color); padding: 2rem; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37); }
+        [id^="controls-panel-"] { width: 480px; }
+        [id^="diagram-container-"] { flex-grow: 1; min-width: 400px; max-width: 800px; }
+        h2 { font-size: 1.5rem; color: var(--accent-color); margin-bottom: 1.5rem; border-bottom: 1px solid var(--accent-color); padding-bottom: 0.5rem;}
+        .control-group { margin-bottom: 1.5rem; }
+        .control-group label { display: block; margin-bottom: 0.5rem; }
+        input[type="range"] { width: 100%; -webkit-appearance: none; appearance: none; background: transparent; cursor: pointer; }
+        input[type="range"]::-webkit-slider-runnable-track { background: #21262d; height: 0.5rem; border-radius: 1rem; }
+        input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; appearance: none; margin-top: -4px; background-color: var(--accent-color); height: 1.2rem; width: 1.2rem; border-radius: 50%; border: 2px solid var(--bg-color); box-shadow: 0 0 10px var(--accent-color); transition: transform 0.2s; }
+        input[type="range"]:active::-webkit-slider-thumb { transform: scale(1.2); }
+        button { width: 100%; padding: 0.8rem; margin-top: 1rem; background-color: var(--highlight-color); color: black; border: none; font-family: var(--font-family); font-size: 1rem; font-weight: bold; border-radius: 5px; cursor: pointer; transition: background-color 0.2s; }
+        button:hover { background-color: white; }
+        .results-panel { margin-top: 1rem; padding-top: 1rem; border-top: 1px dashed var(--border-color); }
+        .results-panel p { display: flex; justify-content: space-between; margin-bottom: 0.5rem; }
+        .highlight-result { color: var(--highlight-color); font-weight: bold; font-size: 1.1rem; }
+        .energy-bars { margin-top: 1rem; }
+        .energy-bar { margin-bottom: 0.5rem; font-size: 0.9rem;}
+        .bar-label { display: inline-block; width: 110px; }
+        .bar-container { display: inline-block; width: calc(100% - 120px); background: #21262d; border-radius: 5px; height: 20px; border: 1px solid var(--border-color); }
+        .bar-fill { height: 100%; border-radius: 5px; transition: width 0.05s linear; text-align: right; padding-right: 5px; color: black; font-weight: bold; font-size: 0.8rem; }
+        .bar-potential { background: linear-gradient(90deg, #2d733a, var(--energy-potential-color)); }
+        .bar-kinetic { background: linear-gradient(90deg, #c36e33, var(--energy-kinetic-color)); }
+        .bar-total { background: linear-gradient(90deg, #999, #eee); }
+        canvas { width: 100%; height: 500px; background-color: rgba(1, 4, 9, 0.7); border-radius: 0.5rem; }
+        @media (max-width: 1200px) { .physics-module { flex-direction: column; align-items: center; } [id^="controls-panel-"] { width: 95%; max-width: 700px; } [id^="diagram-container-"] { width: 95%; max-width: 700px; } }
+    </style>
 </head>
 <body>
 
     <header>
-        <h1>Laboratorio de Dinámica Virtual</h1>
+        <h1>Laboratorio de Dinámica Inmersivo</h1>
         <div class="module-selector-container">
             <label for="module-select">Seleccionar Módulo de Física:</label>
             <select id="module-select">
                 <option value="planoInclinado">1. Plano Inclinado</option>
-                <option value="poleaAtwood">2. Polea (Máquina de Atwood)</option>
-                <option value="bloquesContacto">3. Dos Bloques en Contacto</option>
+                <option value="poleaAtwood">2. Máquina de Atwood</option>
+                <option value="resorteMasa">3. Sistema Resorte-Masa</option>
+                <option value="colisiones">4. Colisiones 1D</option>
+                <option value="movimientoCircular">5. Movimiento Circular</option>
             </select>
         </div>
     </header>
 
     <main class="main-container">
-
-        <!-- ============== MÓDULO 1: PLANO INCLINADO ============== -->
-        <div id="planoInclinado-module" class="physics-module active-module">
-            <div id="controls-panel-planoInclinado" class="glass-panel">
-                <h2><span class="icon">⚙</span> Plano Inclinado: Parámetros</h2>
-                <div class="control-group">
-                    <label for="mass-pi">Masa (m): <span id="mass-value-pi">10</span> kg</label>
-                    <input type="range" id="mass-pi" min="1" max="100" value="10" step="1">
-                </div>
-                <div class="control-group">
-                    <label for="angle-pi">Ángulo (θ): <span id="angle-value-pi">30</span>°</label>
-                    <input type="range" id="angle-pi" min="0" max="90" value="30" step="1">
-                </div>
-                <div class="control-group">
-                    <label for="friction-pi">Coef. Fricción (μs): <span id="friction-value-pi">0.3</span></label>
-                    <input type="range" id="friction-pi" min="0" max="1" value="0.3" step="0.01">
-                </div>
-                <div class="control-group">
-                    <label for="force-pi">Fuerza Aplicada (Fa): <span id="force-value-pi">0</span> N</label>
-                    <input type="range" id="force-pi" min="-200" max="500" value="0" step="1">
-                </div>
-                <div id="results-pi" class="results-panel"></div>
-            </div>
-            <div id="diagram-container-pi" class="glass-panel">
-                <h2><span class="icon"></span> Diagrama del Sistema</h2>
-                <canvas id="canvas-pi"></canvas>
-            </div>
-        </div>
-
-        <!-- ============== MÓDULO 2: POLEA (MÁQUINA DE ATWOOD) ============== -->
-        <div id="poleaAtwood-module" class="physics-module">
-            <div id="controls-panel-polea" class="glass-panel">
-                <h2><span class="icon">⚙</span> Máquina de Atwood: Parámetros</h2>
-                <div class="control-group">
-                    <label for="mass1-pa">Masa 1 (m1): <span id="mass1-value-pa">8</span> kg</label>
-                    <input type="range" id="mass1-pa" min="1" max="50" value="8" step="1">
-                </div>
-                <div class="control-group">
-                    <label for="mass2-pa">Masa 2 (m2): <span id="mass2-value-pa">5</span> kg</label>
-                    <input type="range" id="mass2-pa" min="1" max="50" value="5" step="1">
-                </div>
-                <div id="results-pa" class="results-panel"></div>
-            </div>
-            <div id="diagram-container-pa" class="glass-panel">
-                 <h2><span class="icon"></span> Diagrama del Sistema</h2>
-                <canvas id="canvas-pa"></canvas>
-            </div>
-        </div>
-        
-        <!-- ============== MÓDULO 3: DOS BLOQUES EN CONTACTO ============== -->
-        <div id="bloquesContacto-module" class="physics-module">
-            <div id="controls-panel-bc" class="glass-panel">
-                <h2><span class="icon">⚙</span> Bloques en Contacto: Parámetros</h2>
-                <div class="control-group">
-                    <label for="force-bc">Fuerza de Empuje (F): <span id="force-value-bc">100</span> N</label>
-                    <input type="range" id="force-bc" min="0" max="500" value="100" step="1">
-                </div>
-                <div class="control-group">
-                    <label for="mass1-bc">Masa 1 (m1): <span id="mass1-value-bc">5</span> kg</label>
-                    <input type="range" id="mass1-bc" min="1" max="50" value="5" step="1">
-                </div>
-                 <div class="control-group">
-                    <label for="mass2-bc">Masa 2 (m2): <span id="mass2-value-bc">10</span> kg</label>
-                    <input type="range" id="mass2-bc" min="1" max="50" value="10" step="1">
-                </div>
-                <div class="control-group">
-                    <label for="friction-bc">Coef. Fricción (μk): <span id="friction-value-bc">0.1</span></label>
-                    <input type="range" id="friction-bc" min="0" max="1" value="0.1" step="0.01">
-                </div>
-                <div id="results-bc" class="results-panel"></div>
-            </div>
-            <div id="diagram-container-bc" class="glass-panel">
-                 <h2><span class="icon"></span> Diagrama del Sistema</h2>
-                <canvas id="canvas-bc"></canvas>
-            </div>
-        </div>
-
+        <!-- El contenido de los módulos se generará dinámicamente con JavaScript -->
+        <div id="planoInclinado-module" class="physics-module active-module"></div>
+        <div id="poleaAtwood-module" class="physics-module"></div>
+        <div id="resorteMasa-module" class="physics-module"></div>
+        <div id="colisiones-module" class="physics-module"></div>
+        <div id="movimientoCircular-module" class="physics-module"></div>
     </main>
-    
-    <script src="diagrama.js"></script>
-    <script src="script.js"></script>
+
+    <!-- ======================= JAVASCRIPT: Parte 1 de 2 ======================= -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const G = 9.81;
+            let animationFrameId;
+            const dom = { moduleSelect: document.getElementById('module-select'), modules: {} };
+
+            const moduleTemplates = {
+                planoInclinado: `<div class="glass-panel controls-panel"><h2>Plano Inclinado</h2><div class="control-group"><label>Masa (m): <span class="value-label">10</span> kg</label><input type="range" name="mass" min="1" max="50" value="10" step="1"></div><div class="control-group"><label>Ángulo (θ): <span class="value-label">30</span>°</label><input type="range" name="angle" min="0" max="85" value="30" step="1"></div><div class="control-group"><label>Coef. Fricción Estática (μs): <span class="value-label">0.40</span></label><input type="range" name="mu_s" min="0" max="1" value="0.4" step="0.01"></div><div class="control-group"><label>Coef. Fricción Cinética (μk): <span class="value-label">0.20</span></label><input type="range" name="mu_k" min="0" max="1" value="0.2" step="0.01"></div><div class="control-group"><label>Fuerza Aplicada (Fa): <span class="value-label">0</span> N</label><input type="range" name="force" min="-200" max="500" value="0" step="1"></div><div class="results-panel"></div></div><div class="glass-panel diagram-container"><canvas></canvas></div>`,
+                poleaAtwood: `<div class="glass-panel controls-panel"><h2>Máquina de Atwood</h2><div class="control-group"><label>Masa 1 (m1): <span class="value-label">8</span> kg</label><input type="range" name="mass1" min="1" max="50" value="8" step="1"></div><div class="control-group"><label>Masa 2 (m2): <span class="value-label">5</span> kg</label><input type="range" name="mass2" min="1" max="50" value="5" step="1"></div><div class="results-panel"></div></div><div class="glass-panel diagram-container"><canvas></canvas></div>`,
+                resorteMasa: `<div class="glass-panel controls-panel"><h2>Sistema Resorte-Masa</h2><div class="control-group"><label>Masa (m): <span class="value-label">2.0</span> kg</label><input type="range" name="mass" min="0.5" max="10" value="2" step="0.1"></div><div class="control-group"><label>Constante Resorte (k): <span class="value-label">100</span> N/m</label><input type="range" name="k" min="10" max="500" value="100" step="5"></div><div class="control-group"><label>Amplitud (A): <span class="value-label">1.0</span> m</label><input type="range" name="amplitude" min="0.1" max="2" value="1" step="0.1"></div><div class="results-panel"></div></div><div class="glass-panel diagram-container"><canvas></canvas></div>`,
+                colisiones: `<div class="glass-panel controls-panel"><h2>Colisiones 1D</h2><div class="control-group"><label>Masa 1: <span class="value-label">2.0</span> kg</label><input type="range" name="m1" min="1" max="10" value="2" step="0.5"></div><div class="control-group"><label>Velocidad 1: <span class="value-label">5.0</span> m/s</label><input type="range" name="v1" min="-10" max="10" value="5" step="0.5"></div><div class="control-group"><label>Masa 2: <span class="value-label">4.0</span> kg</label><input type="range" name="m2" min="1" max="10" value="4" step="0.5"></div><div class="control-group"><label>Velocidad 2: <span class="value-label">-2.0</span> m/s</label><input type="range" name="v2" min="-10" max="10" value="-2" step="0.5"></div><div class="control-group"><label>Elasticidad (e): <span class="value-label">1.00</span></label><input type="range" name="elasticity" min="0" max="1" value="1" step="0.05"></div><button name="reset">REINICIAR SIMULACIÓN</button><div class="results-panel"></div></div><div class="glass-panel diagram-container"><canvas></canvas></div>`,
+                movimientoCircular: `<div class="glass-panel controls-panel"><h2>Movimiento Circular</h2><div class="control-group"><label>Masa (m): <span class="value-label">1.0</span> kg</label><input type="range" name="mass" min="0.1" max="10" value="1" step="0.1"></div><div class="control-group"><label>Radio (r): <span class="value-label">100</span> m</label><input type="range" name="radius" min="50" max="200" value="100" step="5"></div><div class="control-group"><label>Velocidad (v): <span class="value-label">10.0</span> m/s</label><input type="range" name="velocity" min="1" max="40" value="10" step="0.5"></div><div class="results-panel"></div></div><div class="glass-panel diagram-container"><canvas></canvas></div>`
+            };
+            
+            function setupDOM() {
+                for (const moduleName in moduleTemplates) {
+                    const container = document.getElementById(`${moduleName}-module`);
+                    container.innerHTML = moduleTemplates[moduleName];
+                    dom.modules[moduleName] = {};
+                    container.querySelectorAll('input, button, .results-panel, canvas, .value-label').forEach(el => {
+                        const key = el.getAttribute('name') || (el.tagName === 'CANVAS' ? 'canvas' : el.tagName === 'DIV' ? 'results' : '');
+                        if (key) {
+                           if(el.tagName === 'INPUT') dom.modules[moduleName][key] = { input: el, label: el.previousElementSibling.querySelector('.value-label') };
+                           else dom.modules[moduleName][key] = el;
+                        }
+                    });
+                }
+            }
+            
+            // ==========================================================
+            //           LÓGICA DE FÍSICA Y ANIMACIÓN POR MÓDULO
+            // ==========================================================
+            const physicsModules = {
+                
+                planoInclinado: {
+                    state: {},
+                    init() { this.elements = dom.modules.planoInclinado; this.update(); cancelAnimationFrame(animationFrameId); this.state.running = true; this.animate(); },
+                    update() {
+                        const s = this.state, el = this.elements;
+                        s.mass = parseFloat(el.mass.input.value); s.angle = parseFloat(el.angle.input.value); s.mu_s = parseFloat(el.mu_s.input.value); s.mu_k = parseFloat(el.mu_k.input.value); s.force = parseFloat(el.force.input.value);
+                        s.position = 0; s.velocity = 0;
+                        
+                        const angleRad = s.angle * Math.PI / 180;
+                        s.Fn = s.mass * G * Math.cos(angleRad); const Fgx = s.mass * G * Math.sin(angleRad);
+                        const maxStaticFf = s.Fn * s.mu_s; const kineticFf = s.Fn * s.mu_k;
+                        const drivingForce = s.force - Fgx;
+                        
+                        if (Math.abs(drivingForce) <= maxStaticFf) { s.friction = -drivingForce; s.acceleration = 0; }
+                        else { s.friction = -kineticFf * Math.sign(drivingForce); s.acceleration = (drivingForce + s.friction) / s.mass; }
+                        
+                        el.results.innerHTML = `<p>F. Normal (N): <span>${s.Fn.toFixed(2)} N</span></p><p>Fricción (Ff): <span>${s.friction.toFixed(2)} N</span></p><p class="highlight-result">Aceleración: <span>${s.acceleration.toFixed(2)} m/s²</span></p>`;
+                    },
+                    animate(lastTime = performance.now()) {
+                        const s = this.state;
+                        if (!s.running) return;
+                        
+                        let currentTime = performance.now();
+                        const deltaTime = (currentTime - lastTime) / 1000;
+                        s.velocity += s.acceleration * deltaTime; s.position += s.velocity * deltaTime;
+                        
+                        Drawer.planoInclinado(s, this.elements.canvas.getContext('2d'), this.elements.canvas);
+                        animationFrameId = requestAnimationFrame(() => this.animate(currentTime));
+                    }
+                },
+                
+                poleaAtwood: {
+                    state: { y1: 150, y2: 150 },
+                    init() { this.elements = dom.modules.poleaAtwood; this.update(); cancelAnimationFrame(animationFrameId); this.state.running = true; this.animate(); },
+                    update() {
+                        const s = this.state, el = this.elements;
+                        s.m1 = parseFloat(el.mass1.input.value); s.m2 = parseFloat(el.mass2.input.value);
+                        s.velocity = 0; s.y1 = 150; s.y2 = 150;
+
+                        const mTotal = s.m1 + s.m2;
+                        s.acceleration = mTotal > 0 ? ((s.m1 - s.m2) * G) / mTotal : 0;
+                        s.T = mTotal > 0 ? (s.m1 * (G + s.acceleration)) : 0;
+                        
+                        el.results.innerHTML = `<p>Tensión Cuerda (T): <span>${s.T.toFixed(2)} N</span></p><p class="highlight-result">Aceleración: <span>${s.acceleration.toFixed(2)} m/s²</span></p>`;
+                    },
+                    animate(lastTime = performance.now()) {
+                        const s = this.state; if (!s.running) return;
+                        let currentTime = performance.now();
+                        const deltaTime = (currentTime - lastTime) / 1000;
+                        
+                        s.velocity += s.acceleration * deltaTime;
+                        s.y1 += s.velocity * deltaTime * 10; // *10 para visualización
+                        s.y2 -= s.velocity * deltaTime * 10;
+                        
+                        if (s.y1 > 450 || s.y1 < 50) { s.velocity = 0; s.y1 = Math.min(450, Math.max(50, s.y1)); s.y2 = 300 - s.y1; }
+                        
+                        Drawer.poleaAtwood(s, this.elements.canvas.getContext('2d'), this.elements.canvas);
+                        animationFrameId = requestAnimationFrame(() => this.animate(currentTime));
+                    }
+                },
+                
+                resorteMasa: {
+                    state: { time: 0 },
+                    init() { this.elements = dom.modules.resorteMasa; this.update(); cancelAnimationFrame(animationFrameId); this.state.running = true; this.animate(); },
+                    update() {
+                        const s = this.state, el = this.elements;
+                        s.mass = parseFloat(el.mass.input.value); s.k = parseFloat(el.k.input.value); s.amplitude = parseFloat(el.amplitude.input.value);
+                        s.omega = Math.sqrt(s.k / s.mass);
+                        s.totalE = 0.5 * s.k * s.amplitude * s.amplitude;
+                        s.time = 0;
+                    },
+                    animate() {
+                        const s = this.state; if (!s.running) return;
+                        s.time += 1 / 60;
+                        
+                        s.position = s.amplitude * Math.cos(s.omega * s.time);
+                        s.velocity = -s.amplitude * s.omega * Math.sin(s.omega * s.time);
+                        s.potentialE = 0.5 * s.k * s.position * s.position;
+                        s.kineticE = 0.5 * s.mass * s.velocity * s.velocity;
+                        s.force = -s.k * s.position;
+                        
+                        const el = this.elements;
+                        el.results.innerHTML = `<p>Periodo (T): <span>${(2*Math.PI/s.omega).toFixed(2)} s</span></p><p>Velocidad Max: <span>${(s.amplitude * s.omega).toFixed(2)} m/s</span></p><p class="highlight-result">Energía Total: <span>${s.totalE.toFixed(2)} J</span></p><div class="energy-bars"><div class="energy-bar"><span class="bar-label">E. Cinética</span><div class="bar-container"><div class="bar-fill bar-kinetic" style="width:${(s.kineticE/s.totalE)*100}%">${s.kineticE.toFixed(1)}J</div></div></div><div class="energy-bar"><span class="bar-label">E. Potencial</span><div class="bar-container"><div class="bar-fill bar-potential" style="width:${(s.potentialE/s.totalE)*100}%">${s.potentialE.toFixed(1)}J</div></div></div></div>`;
+
+                        Drawer.resorteMasa(s, this.elements.canvas.getContext('2d'), this.elements.canvas);
+                        animationFrameId = requestAnimationFrame(() => this.animate());
+                    }
+                },
+    </script>
+    <!-- FINAL DE LA PARTE 1 -->
+        <!-- ======================= JAVASCRIPT: Parte 2 de 2 ======================= -->
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Este bloque se ejecuta después del anterior. Accede a las variables globales ya definidas.
+            const physicsModules = window.physicsModules;
+            const Drawer = window.Drawer;
+
+            Object.assign(physicsModules, {
+                colisiones: {
+                    state: {},
+                    init() {
+                        this.elements = dom.modules.colisiones; this.update();
+                        cancelAnimationFrame(animationFrameId); this.state.running = true; this.animate();
+                    },
+                    update() {
+                        const s = this.state, el = this.elements;
+                        s.m1 = parseFloat(el.m1.input.value); s.v1_i = parseFloat(el.v1.input.value);
+                        s.m2 = parseFloat(el.m2.input.value); s.v2_i = parseFloat(el.v2.input.value);
+                        s.e = parseFloat(el.elasticity.input.value);
+                        
+                        s.p1_x = 100; s.p2_x = 400; // Posiciones iniciales
+                        s.collided = false;
+                        
+                        const p_i = s.m1 * s.v1_i + s.m2 * s.v2_i;
+                        const KE_i = 0.5 * s.m1 * s.v1_i**2 + 0.5 * s.m2 * s.v2_i**2;
+                        
+                        // Fórmulas de colisión
+                        s.v1_f = (p_i - s.e * s.m2 * (s.v1_i - s.v2_i)) / (s.m1 + s.m2);
+                        s.v2_f = s.e * (s.v1_i - s.v2_i) + s.v1_f;
+                        
+                        const KE_f = 0.5 * s.m1 * s.v1_f**2 + 0.5 * s.m2 * s.v2_f**2;
+                        
+                        el.results.innerHTML = `<p>Vel. Final 1: <span>${s.v1_f.toFixed(2)} m/s</span></p><p>Vel. Final 2: <span>${s.v2_f.toFixed(2)} m/s</span></p><p class="highlight-result">Energía Cinética: <span>${((KE_f / KE_i) * 100).toFixed(1)}%</span></p><p class="highlight-result">Momento Total: <span>${p_i.toFixed(2)} kg·m/s</span></p>`;
+                    },
+                    animate(lastTime = performance.now()) {
+                        const s = this.state; if (!s.running) return;
+                        const deltaTime = (performance.now() - lastTime) / 1000;
+                        const scale = 20;
+
+                        if (!s.collided) {
+                            s.p1_x += s.v1_i * deltaTime * scale; s.p2_x += s.v2_i * deltaTime * scale;
+                            const r1 = s.m1 * 3, r2 = s.m2 * 3;
+                            if (Math.abs(s.p1_x - s.p2_x) < r1 + r2) { s.collided = true; }
+                        } else {
+                            s.p1_x += s.v1_f * deltaTime * scale; s.p2_x += s.v2_f * deltaTime * scale;
+                        }
+
+                        Drawer.colisiones(s, this.elements.canvas.getContext('2d'), this.elements.canvas);
+                        animationFrameId = requestAnimationFrame(() => this.animate(performance.now()));
+                    }
+                },
+
+                movimientoCircular: {
+                    state: { angle: 0 },
+                    init() { this.elements = dom.modules.movimientoCircular; this.update(); cancelAnimationFrame(animationFrameId); this.state.running = true; this.animate(); },
+                    update() {
+                        const s = this.state, el = this.elements;
+                        s.mass = parseFloat(el.mass.input.value); s.radius = parseFloat(el.radius.input.value);
+                        s.velocity = parseFloat(el.velocity.input.value);
+                        s.Fc = s.mass * s.velocity**2 / s.radius;
+                        s.ac = s.velocity**2 / s.radius;
+                        s.omega = s.velocity / s.radius; // Frecuencia angular
+
+                        el.results.innerHTML = `<p>Acel. Centrípeta: <span>${s.ac.toFixed(2)} m/s²</span></p><p class="highlight-result">F. Centrípeta: <span>${s.Fc.toFixed(2)} N</span></p>`;
+                    },
+                    animate() {
+                        const s = this.state; if (!s.running) return;
+                        s.angle += s.omega * (1 / 60); // Asumiendo 60fps
+                        
+                        Drawer.movimientoCircular(s, this.elements.canvas.getContext('2d'), this.elements.canvas);
+                        animationFrameId = requestAnimationFrame(() => this.animate());
+                    }
+                }
+            });
+
+            // Asignar al objeto global `Drawer` las funciones de dibujo.
+            window.Drawer = {
+                // Funciones de dibujo para cada módulo
+                planoInclinado(s, ctx, canvas) { /* código de dibujo */ },
+                poleaAtwood(s, ctx, canvas) { /* código de dibujo */ },
+                resorteMasa(s, ctx, canvas) { /* código de dibujo */ },
+                colisiones(s, ctx, canvas) { /* código de dibujo */ },
+                movimientoCircular(s, ctx, canvas) { /* código de dibujo */ },
+                
+                // Función auxiliar para dibujar flechas
+                _drawArrow(ctx, x, y, mag, angle, color, label) { /* código para dibujar flechas */ },
+            };
+            
+            // ==========================================================
+            //       DEFINICIONES COMPLETAS DEL MOTOR DE DIBUJO
+            // ==========================================================
+            Object.assign(window.Drawer, {
+                // Función de dibujo del plano inclinado
+                planoInclinado(s, ctx, canvas) {
+                    const { width, height } = canvas.getBoundingClientRect(); ctx.clearRect(0, 0, width, height);
+                    const scale = 50;
+                    const angleRad = s.angle * Math.PI / 180;
+                    
+                    ctx.save();
+                    ctx.translate(width/2 - s.position*Math.cos(angleRad)*3, height * 0.7 + s.position*Math.sin(angleRad)*3);
+                    ctx.rotate(-angleRad);
+                    
+                    const block_w = 20 + s.mass * 0.5, block_h = 20 + s.mass * 0.5;
+                    ctx.fillStyle = '#58a6ff'; ctx.fillRect(-block_w/2, -block_h, block_w, block_h);
+                    
+                    // DCL
+                    this._drawArrow(ctx, 0, -block_h/2, s.Fn*0.5, -90, 'cyan', 'N');
+                    this._drawArrow(ctx, 0, -block_h/2, s.friction*0.5, s.friction < 0 ? 0 : 180, 'lime', 'Ff');
+                    this._drawArrow(ctx, 0, -block_h/2, s.force*0.5, s.force > 0 ? 0 : 180, '#e34c26', 'Fa');
+                    this._drawArrow(ctx, 0, 0, s.mass*G*0.5, 90 + s.angle, 'yellow', 'mg');
+
+                    ctx.restore();
+                    
+                    // Rampa
+                    ctx.save();
+                    ctx.translate(0, height * 0.7);
+                    ctx.rotate(-angleRad);
+                    ctx.fillStyle = '#21262d'; ctx.fillRect(-width*2, 0, width * 4, height);
+                    ctx.restore();
+                },
+
+                poleaAtwood(s, ctx, canvas) {
+                     const { width, height } = canvas.getBoundingClientRect(); ctx.clearRect(0, 0, width, height);
+                     const poleaX = width/2, poleaY = 80, poleaR = 30;
+                     ctx.fillStyle = "#888"; ctx.beginPath(); ctx.arc(poleaX, poleaY, poleaR, 0, 2 * Math.PI); ctx.fill();
+                     
+                     const x1 = poleaX - poleaR, x2 = poleaX + poleaR;
+                     ctx.strokeStyle="white"; ctx.lineWidth=2;
+                     ctx.beginPath(); ctx.moveTo(x1, poleaY); ctx.lineTo(x1, s.y1); ctx.stroke();
+                     ctx.beginPath(); ctx.moveTo(x2, poleaY); ctx.lineTo(x2, s.y2); ctx.stroke();
+                     
+                     const w1 = 20+s.m1, h1=20+s.m1; ctx.fillStyle="#58a6ff"; ctx.fillRect(x1 - w1/2, s.y1, w1, h1);
+                     this._drawArrow(ctx, x1, s.y1, s.T*0.5, -90, "var(--tension-color)", "T");
+                     this._drawArrow(ctx, x1, s.y1+h1, s.m1*G*0.5, 90, "yellow", "m1g");
+
+                     const w2 = 20+s.m2, h2=20+s.m2; ctx.fillStyle="#f778ba"; ctx.fillRect(x2 - w2/2, s.y2, w2, h2);
+                     this._drawArrow(ctx, x2, s.y2, s.T*0.5, -90, "var(--tension-color)", "T");
+                     this._drawArrow(ctx, x2, s.y2+h2, s.m2*G*0.5, 90, "yellow", "m2g");
+                },
+                
+                resorteMasa(s, ctx, canvas) {
+                     const { width, height } = canvas.getBoundingClientRect(); ctx.clearRect(0, 0, width, height);
+                     const eqX = width / 2; const blockY = height / 2;
+                     const pixelsPerMeter = (width * 0.4) / s.amplitude;
+                     const currentX = eqX + s.position * pixelsPerMeter;
+                     const blockSize = Math.max(30, s.mass * 4);
+                     
+                     // Resorte
+                     ctx.strokeStyle = '#9e9e9e'; ctx.lineWidth = 3; const coils = 20, coilHeight = 20;
+                     const coilWidth = (currentX - eqX) / coils;
+                     ctx.beginPath(); ctx.moveTo(eqX, blockY);
+                     for (let i = 0; i < coils; i++) { ctx.lineTo(eqX + (i + 0.5) * coilWidth, blockY + ((i % 2 === 0) ? -coilHeight : coilHeight)); }
+                     ctx.lineTo(currentX, blockY); ctx.stroke();
+                     
+                     // Bloque
+                     ctx.fillStyle = '#58a6ff'; ctx.fillRect(currentX - blockSize/2, blockY - blockSize/2, blockSize, blockSize);
+                     ctx.strokeStyle = '#c9d1d9'; ctx.strokeRect(currentX - blockSize/2, blockY - blockSize/2, blockSize, blockSize);
+
+                     this._drawArrow(ctx, currentX, blockY + blockSize/2 + 5, -s.force * (pixelsPerMeter / 50), 'F_resorte', 'var(--force-color)');
+                     this._drawArrow(ctx, currentX, blockY - blockSize/2 - 25, s.velocity * pixelsPerMeter * 2, 'Velocidad', 'var(--velocity-color)');
+                },
+
+                colisiones(s, ctx, canvas) {
+                    const { width, height } = canvas.getBoundingClientRect(); ctx.clearRect(0, 0, width, height);
+                    const y = height/2; const r1 = s.m1 * 5, r2 = s.m2 * 5;
+
+                    ctx.fillStyle = '#58a6ff'; ctx.beginPath(); ctx.arc(s.p1_x, y, r1, 0, 2*Math.PI); ctx.fill();
+                    ctx.fillStyle = '#f778ba'; ctx.beginPath(); ctx.arc(s.p2_x, y, r2, 0, 2*Math.PI); ctx.fill();
+                    
+                    const v_actual_1 = s.collided ? s.v1_f : s.v1_i; this._drawArrow(ctx, s.p1_x, y, v_actual_1*10, 0, 'white', `v1=${v_actual_1.toFixed(1)}`);
+                    const v_actual_2 = s.collided ? s.v2_f : s.v2_i; this._drawArrow(ctx, s.p2_x, y, v_actual_2*10, 0, 'white', `v2=${v_actual_2.toFixed(1)}`);
+                },
+                
+                movimientoCircular(s, ctx, canvas) {
+                    const { width, height } = canvas.getBoundingClientRect(); ctx.clearRect(0, 0, width, height);
+                    const centerX = width / 2, centerY = height / 2;
+                    const r_pixels = s.radius * 0.8;
+
+                    ctx.strokeStyle = 'var(--dcl-grid)'; ctx.setLineDash([5, 5]); ctx.beginPath(); ctx.arc(centerX, centerY, r_pixels, 0, 2 * Math.PI); ctx.stroke(); ctx.setLineDash([]);
+                    
+                    const px = centerX + r_pixels * Math.cos(s.angle); const py = centerY + r_pixels * Math.sin(s.angle);
+                    const mass_r = 10 + s.mass * 0.5;
+                    
+                    ctx.fillStyle = '#58a6ff'; ctx.beginPath(); ctx.arc(px, py, mass_r, 0, 2 * Math.PI); ctx.fill();
+
+                    this._drawArrow(ctx, px, py, s.velocity*5, s.angle*180/Math.PI + 90, 'var(--velocity-color)', 'v');
+                    this._drawArrow(ctx, px, py, s.ac*2, s.angle*180/Math.PI + 180, 'var(--highlight-color)', 'ac');
+                },
+
+                _drawArrow(ctx, x, y, mag, angleDeg, color, label) {
+                    if (Math.abs(mag) < 1) return;
+                    const angleRad = angleDeg * Math.PI / 180;
+                    const endX = x + mag * Math.cos(angleRad), endY = y + mag * Math.sin(angleRad);
+                    ctx.save(); ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 3;
+                    ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(endX, endY); ctx.stroke();
+                    ctx.translate(endX, endY); ctx.rotate(angleRad);
+                    ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-10, -5); ctx.lineTo(-10, 5); ctx.closePath(); ctx.fill();
+                    ctx.restore(); ctx.fillStyle = color; ctx.fillText(label, endX + 15, endY);
+                }
+            });
+
+            // ==========================================================
+            //       CONTROLADOR PRINCIPAL Y SETUP INICIAL
+            // ==========================================================
+            
+            // Asignar los objetos al window para que la segunda parte del script pueda acceder a ellos
+            window.physicsModules = physicsModules;
+            window.dom = dom;
+
+            function switchModule(moduleName) {
+                cancelAnimationFrame(animationFrameId);
+                for (const key in physicsModules) { physicsModules[key].state.running = (key === moduleName); }
+                document.querySelectorAll('.physics-module').forEach(m => m.classList.remove('active-module'));
+                document.getElementById(`${moduleName}-module`).classList.add('active-module');
+                physicsModules[moduleName].init();
+            }
+
+            function main() {
+                setupDOM();
+                document.querySelectorAll('input[type="range"]').forEach(input => {
+                    input.addEventListener('input', (e) => {
+                        const moduleName = dom.moduleSelect.value;
+                        const el = e.target;
+                        el.previousElementSibling.querySelector('.value-label').textContent = parseFloat(el.value).toFixed(2);
+                        physicsModules[moduleName].update();
+                    });
+                });
+                
+                document.querySelectorAll('button[name="reset"]').forEach(btn => {
+                   btn.addEventListener('click', () => { dom.moduleSelect.dispatchEvent(new Event('change')); });
+                });
+                
+                dom.moduleSelect.addEventListener('change', (e) => switchModule(e.target.value));
+                switchModule('planoInclinado');
+            }
+
+            main();
+        });
+    </script>
 </body>
 </html>
