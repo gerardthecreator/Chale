@@ -1,116 +1,113 @@
-const DiagramDrawer = {
-    ctx: null,
-    canvas: null,
-    scale: 2.5,
+const Diagramas = {
     g: 9.81,
 
-    init(canvasId) {
-        this.canvas = document.getElementById(canvasId);
-        this.ctx = this.canvas.getContext('2d');
-        // Aumentar la resolución del canvas para que no se vea pixelado
+    // Inicializador general de canvas
+    _initCanvas(canvasId) {
+        const canvas = document.getElementById(canvasId);
+        const ctx = canvas.getContext('2d');
         const dpr = window.devicePixelRatio || 1;
-        const rect = this.canvas.getBoundingClientRect();
-        this.canvas.width = rect.width * dpr;
-        this.canvas.height = rect.height * dpr;
-        this.ctx.scale(dpr, dpr);
+        const rect = canvas.getBoundingClientRect();
+        canvas.width = rect.width * dpr;
+        canvas.height = 400 * dpr; // Altura fija para consistencia
+        ctx.scale(dpr, dpr);
+        ctx.font = "14px 'Share Tech Mono'";
+        return { canvas, ctx };
     },
 
-    // Función principal para dibujar todo
-    draw(state) {
-        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
-        this.ctx.font = "14px 'Share Tech Mono'";
-
+    // ================= DIBUJANTE: PLANO INCLINADO =================
+    planoInclinado(state) {
+        const { canvas, ctx } = this._initCanvas('canvas-pi');
+        const scale = 2.5;
         const angleRad = state.angle * Math.PI / 180;
         
-        // --- Dibujar elementos base ---
-        this._drawRamp(angleRad);
-        
-        // --- Guardar estado y rotar para el bloque y las fuerzas ---
-        this.ctx.save();
-        this.ctx.translate(200, 320 - Math.tan(angleRad) * 150);
-        this.ctx.rotate(-angleRad);
-        
-        this._drawBlock();
+        // Dibuja el plano inclinado
+        ctx.beginPath();
+        ctx.moveTo(50, 350);
+        ctx.lineTo(550, 350);
+        ctx.lineTo(550, 350 - Math.tan(angleRad) * 500);
+        ctx.closePath();
+        ctx.fillStyle = "#374151"; ctx.fill();
 
-        // --- Calcular y dibujar fuerzas ---
-        const Fg = state.mass * this.g;
-        const Fn = Fg * Math.cos(angleRad);
-        const Fgx = Fg * Math.sin(angleRad);
-        
-        this._drawForceArrow(0, 0, Fg * Math.cos(angleRad), -90, '#00E5FF', 'N');  // Normal
-        this._drawForceArrow(0, 0, Fg, 90 + state.angle, '#FACC15', 'mg'); // Peso
-        
-        if (state.forceApplied !== 0) {
-            this._drawForceArrow(0, 0, Math.abs(state.forceApplied), (state.forceApplied > 0) ? 0 : 180, '#FF4D4D', 'Fa');
-        }
+        // Rota el canvas para dibujar el bloque y fuerzas alineadas
+        ctx.save();
+        ctx.translate(300, 350 - Math.tan(angleRad) * 250);
+        ctx.rotate(-angleRad);
 
-        if (state.frictionForce !== 0) {
-             this._drawForceArrow(0, 0, Math.abs(state.frictionForce), (state.frictionForce < 0) ? 0 : 180, '#7CFF4D', 'Ff');
-        }
-
-        this.ctx.restore(); // Volver al estado original sin rotación
+        // Bloque
+        ctx.fillStyle = '#93C5FD'; ctx.fillRect(-20, -40, 40, 40);
+        
+        // Fuerzas
+        this._drawArrow(ctx, 0, 0, state.Fn * scale, -90, '#00E5FF', 'N');
+        this._drawArrow(ctx, 0, 0, (state.mass * this.g) * scale, 90 + state.angle, '#FACC15', 'mg');
+        if (state.forceApplied !== 0) this._drawArrow(ctx, 0, 0, Math.abs(state.forceApplied) * scale, state.forceApplied > 0 ? 0 : 180, '#FF4D4D', 'Fa');
+        if (state.frictionForce !== 0) this._drawArrow(ctx, 0, 0, Math.abs(state.frictionForce) * scale, state.frictionForce < 0 ? 0 : 180, '#7CFF4D', 'Ff');
+        
+        ctx.restore();
     },
 
-    _drawRamp(angleRad) {
-        this.ctx.fillStyle = "#374151";
-        this.ctx.strokeStyle = "#9CA3AF";
-        this.ctx.lineWidth = 2;
-        this.ctx.beginPath();
-        this.ctx.moveTo(50, 320);
-        this.ctx.lineTo(450, 320);
-        this.ctx.lineTo(450, 320 - Math.tan(angleRad) * 400);
-        this.ctx.closePath();
-        this.ctx.fill();
-        this.ctx.stroke();
+    // ================= DIBUJANTE: MÁQUINA DE ATWOOD =================
+    poleaAtwood(state) {
+        const { canvas, ctx } = this._initCanvas('canvas-pa');
+        const scale = 2;
+        let y1 = 180, y2 = 180;
+        if (state.acceleration !== 0) { // Simula movimiento
+            y1 = state.acceleration > 0 ? 220 : 140;
+            y2 = state.acceleration > 0 ? 140 : 220;
+        }
 
-        // Ángulo
-        this.ctx.strokeStyle = "rgba(255, 255, 255, 0.5)";
-        this.ctx.beginPath();
-        this.ctx.arc(50, 320, 40, 0, -angleRad, true);
-        this.ctx.stroke();
-        this.ctx.fillStyle = "white";
-        this.ctx.fillText(Math.round(angleRad * 180 / Math.PI) + '°', 100, 310);
-    },
+        // Polea
+        ctx.beginPath(); ctx.arc(325, 80, 40, 0, 2 * Math.PI);
+        ctx.fillStyle = "#9CA3AF"; ctx.fill();
 
-    _drawBlock() {
-        this.ctx.fillStyle = '#93C5FD';
-        this.ctx.strokeStyle = '#3B82F6';
-        this.ctx.lineWidth = 2;
-        this.ctx.fillRect(-20, -40, 40, 40);
-        this.ctx.strokeRect(-20, -40, 40, 40);
+        // Cuerdas
+        ctx.strokeStyle = "#F9FAFB"; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(285, 80); ctx.lineTo(285, y1); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(365, 80); ctx.lineTo(365, y2); ctx.stroke();
+
+        // Bloque 1
+        ctx.fillStyle = '#93C5FD'; ctx.fillRect(265, y1, 40, 40);
+        this._drawArrow(ctx, 285, y1, state.T * scale, -90, '#00E5FF', 'T');
+        this._drawArrow(ctx, 285, y1+40, (state.m1 * this.g) * scale, 90, '#FACC15', 'm1g');
+        
+        // Bloque 2
+        ctx.fillStyle = '#FCA5A5'; ctx.fillRect(345, y2, 40, 40);
+        this._drawArrow(ctx, 365, y2, state.T * scale, -90, '#00E5FF', 'T');
+        this._drawArrow(ctx, 365, y2+40, (state.m2 * this.g) * scale, 90, '#FACC15', 'm2g');
     },
     
-    _drawForceArrow(x, y, magnitude, angleDeg, color, label) {
-        const length = magnitude * this.scale;
+    // ================= DIBUJANTE: BLOQUES EN CONTACTO =================
+    bloquesContacto(state) {
+        const { canvas, ctx } = this._initCanvas('canvas-bc');
+        const scale = 0.5;
+
+        // Suelo
+        ctx.fillStyle = "#374151"; ctx.fillRect(50, 300, 550, 20);
+
+        // Bloque 1
+        ctx.fillStyle = '#93C5FD'; ctx.fillRect(200, 250, 80, 50);
+        this._drawArrow(ctx, 200, 275, state.F * scale, 180, '#FF4D4D', 'F');
+        this._drawArrow(ctx, 240, 275, state.F21 * scale, 180, '#A78BFA', 'F21'); //Fuerza de 2 sobre 1
+        this._drawArrow(ctx, 240, 300, state.Ff1 * scale, 0, '#7CFF4D', 'Ff1');
+        
+        // Bloque 2
+        ctx.fillStyle = '#FCA5A5'; ctx.fillRect(280, 220, 120, 80);
+        this._drawArrow(ctx, 280, 275, state.F12 * scale, 180, '#A78BFA', 'F12'); //Fuerza de 1 sobre 2
+        this._drawArrow(ctx, 340, 300, state.Ff2 * scale, 0, '#7CFF4D', 'Ff2');
+
+    },
+
+    // --- FUNCIÓN AUXILIAR PARA DIBUJAR FLECHAS ---
+    _drawArrow(ctx, x, y, magnitude, angleDeg, color, label) {
+        if (magnitude <= 0) return;
         const angleRad = angleDeg * Math.PI / 180;
-        
-        const endX = x + length * Math.cos(angleRad);
-        const endY = y + length * Math.sin(angleRad);
-
-        this.ctx.save();
-        this.ctx.strokeStyle = color;
-        this.ctx.fillStyle = color;
-        this.ctx.lineWidth = 3;
-
-        // Línea
-        this.ctx.beginPath();
-        this.ctx.moveTo(x, y);
-        this.ctx.lineTo(endX, endY);
-        this.ctx.stroke();
-
-        // Punta de flecha
-        this.ctx.translate(endX, endY);
-        this.ctx.rotate(angleRad);
-        this.ctx.beginPath();
-        this.ctx.moveTo(0, 0);
-        this.ctx.lineTo(-10, -5);
-        this.ctx.lineTo(-10, 5);
-        this.ctx.closePath();
-        this.ctx.fill();
-        this.ctx.restore();
-        
-        // Etiqueta
-        this.ctx.fillStyle = color;
-        this.ctx.fillText(label, endX + 10, endY);
+        const endX = x + magnitude * Math.cos(angleRad);
+        const endY = y + magnitude * Math.sin(angleRad);
+        ctx.save();
+        ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(endX, endY); ctx.stroke();
+        ctx.translate(endX, endY); ctx.rotate(angleRad);
+        ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(-10, -5); ctx.lineTo(-10, 5); ctx.closePath(); ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = color; ctx.fillText(label, endX + 10, endY - 10);
     }
 };
