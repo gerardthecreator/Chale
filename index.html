@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Dinámica Avanzada</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="responsive.css">
+    <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <header>
+        <h1>Calculadora de Dinámica Avanzada</h1>
+        <p>Análisis de Cuerpo Libre Interactivo</p>
+    </header>
+
+    <main class="main-container">
+
+        <!-- Panel de Controles -->
+        <div id="controls-panel" class="glass-panel">
+            <h2><span class="icon">⚙</span> Parámetros del Sistema</h2>
+
+            <div class="control-group">
+                <label for="example-select">Cargar Escenario de Ejemplo:</label>
+                <select id="example-select"></select>
+            </div>
+
+            <div class="control-group">
+                <label for="mass-slider">Masa del Bloque (m): <span id="mass-value">10</span> kg</label>
+                <input type="range" id="mass-slider" min="1" max="100" value="10" step="1">
+            </div>
+            
+            <div class="control-group">
+                <label for="angle-slider">Ángulo de Inclinación (θ): <span id="angle-value">30</span>°</label>
+                <input type="range" id="angle-slider" min="0" max="90" value="30" step="1">
+            </div>
+
+            <div class="control-group">
+                <label for="friction-slider">Coef. de Fricción Estática (μs): <span id="friction-value">0.3</span></label>
+                <input type="range" id="friction-slider" min="0" max="1" value="0.3" step="0.01">
+            </div>
+            
+            <div class="control-group">
+                <label for="force-slider">Fuerza Aplicada (Fa): <span id="force-value">0</span> N</label>
+                <input type="range" id="force-slider" min="-200" max="500" value="0" step="1">
+            </div>
+
+            <div id="results-output" class="results-panel">
+                <h3><span class="icon">→</span> Resultados Calculados</h3>
+                <p id="force-normal-result">Fuerza Normal (N): <span>...</span></p>
+                <p id="force-gravity-x-result">Componente X de Gravedad (mg_x): <span>...</span></p>
+                <p id="force-friction-result">Fuerza de Fricción (Ff): <span>...</span></p>
+                <p id="force-net-result">Fuerza Neta (F_neta): <span>...</span></p>
+                <p id="acceleration-result" class="highlight-result">Aceleración (a): <span>...</span></p>
+            </div>
+        </div>
+
+        <!-- Panel del Diagrama -->
+        <div id="diagram-container" class="glass-panel">
+            <h2><span class="icon"></span> Diagrama de Cuerpo Libre (DCL)</h2>
+            <canvas id="fbd-canvas"></canvas>
+        </div>
+
+    </main>
+    
+    <script src="diagrama.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
